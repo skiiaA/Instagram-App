@@ -1,15 +1,21 @@
 import React, { Component, useEffect } from 'react'
 import { View , Text} from 'react-native'
+import firebase from 'firebase'
 
 
 import FeedScreen from './main/Feed'
-
+import AddScreen from './main/Add'
 import ProfileScreen from './main/Profile'
+import SearchScreen from './main/Search'
+
+
 import MaterialCommunityIcons  from 'react-native-vector-icons/MaterialCommunityIcons'
 
 import {connect} from 'react-redux'
 import { bindActionCreators } from 'redux';
-import { fetchUser } from '../redux/actions/index';
+
+import { fetchUser, fetchUserPosts, fetchUserFollowing, clearData } from '../redux/actions/index'
+// import { fetchUser, fetchUserPosts } from '../redux/actions/index'
 
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 
@@ -27,58 +33,99 @@ export class Main extends Component {
     // }
 
 
-    componentDidMount(){
-        console.log("componentDidMount initaitaed")
-        this.props.fetchUser()
+    // componentDidMount(){
+    //     console.log("componentDidMount initaitaed")
+    //     this.props.fetchUser()
 
-        console.log(this.props)
-        const unsubscribe = this.props.navigation.addListener('tabPress', (e) => {
-            // Prevent default behavior
+    //     console.log(this.props)
+    //     const unsubscribe = this.props.navigation.addListener('tabPress', (e) => {
+    //         // Prevent default behavior
         
-            // e.preventDefault();
-            console.log(e)
-            // Do something manually
-            // ...
-        });
-        console.log("unsubsrcibe initaitaed", unsubscribe)
-        // return unsubscribe;
+    //         e.preventDefault();
+    //         console.log(e)
+    //         alert('Deafult Prevented')
+    //         // Do something manually
+    //         // ...
+    //     });
+    //     console.log("unsubsrcibe initaitaed", unsubscribe)
+    //     // return unsubscribe;
+    // }
+
+    componentDidMount() {
+        this.props.clearData();
+        this.props.fetchUser();
+        this.props.fetchUserPosts();
+        this.props.fetchUserFollowing();
     }
 
     render() {
-
-
-
         return (
-            <Tab.Navigator initialRouteName="Feed" labeled = {false}>
-                <Tab.Screen name="Feed"   
-                component={FeedScreen} 
-                options = {{
-                    tabBarIcon : ({ color, size} ) => (
-                        <MaterialCommunityIcons name = "home" color = {color} size = {26} />
-                    ),
-                }}/>
+            < Tab.Navigator 
+                initialRouteName = "Feed" 
+                labeled = { false } >
+                
+                <Tab.Screen 
+                    name = "Feed"   
+                    component = { FeedScreen } 
+                    options = { {
+                        tabBarIcon : ({ color, size} ) => (
+                            <MaterialCommunityIcons      name = "home" 
+                                color = {color} 
+                                size = {26} />
+                        ),
+                    }} />
 
-                <Tab.Screen name="AddContainer"   
-                component={EmptyScreen} 
-                listerners = {({ navigation } ) => ({
-                    tabPress : (event) => {
-                        event.preventDefault()
-                        navigation.navigate("AddS")
+                < Tab.Screen 
+                    name = "Search" 
+                    component = { SearchScreen } 
+                    navigation = { this.props.navigation }
+                    options = { {
+                        tabBarIcon: ({ color, size }) => (
+                            <MaterialCommunityIcons 
+                                name = "magnify" 
+                                color = { color } 
+                                size = { 26 } />
+                        ),
+                    }} />
+                
+                <Tab.Screen 
+                    name = "AddContainer"   
+                    component = { EmptyScreen } 
+                    // navigation = {this.props.navigation}
+                    listeners = {({ navigation }) => ({
+                        tabPress : (event) => {
+                            event.preventDefault()
+                            // alert('Deafult Prevented')
+                            navigation.navigate("Add")
                         
-                    }
-                })}
-                options = {{
-                    tabBarIcon : ({ color, size} ) => (
-                        <MaterialCommunityIcons name = "plus-box" color = {color} size = {26} />
-                    ),
-                }}/>
+                        }
+                    })}
+                    options = {{
+                        tabBarIcon : ({ color, size} ) => (
+                            <MaterialCommunityIcons name = "plus-box" 
+                            color = {color} 
+                            size = {26} />
+                        ),
+                    }}/>
 
-                <Tab.Screen name="Profile"   
-                component={ProfileScreen} 
-                options = {{
-                    tabBarIcon : ({ color, size} ) => (
-                        <MaterialCommunityIcons name = "account-circle" color = {color} size = {26} />
-                    ),
+                <Tab.Screen 
+                    name = "Profile"   
+                    component = { ProfileScreen } 
+                    listeners = {({ navigation } ) => ({
+                        tabPress : (event) => {
+                            event.preventDefault()
+                            // alert('Deafult Prevented')
+                            navigation.navigate("Profile", {uid : firebase.auth().currentUser.uid})
+                        
+                        }
+                    })}
+                    options = {{
+                        tabBarIcon : ({ color, size} ) => (
+                            <MaterialCommunityIcons 
+                                name = "account-circle"   
+                                color = {color} 
+                                size = {26} />
+                            ),
                 }}/>
                 
             </Tab.Navigator>
@@ -86,11 +133,20 @@ export class Main extends Component {
     }
 }
 
+// const mapStateToProps = (store) => ({
+//     currentUser : store.userState.currentUser 
+// })
+
+// //what does it do ?
+// const mapDispatchProps = ( dispatch) => bindActionCreators({ fetchUser, fetchUserPosts}, dispatch)
+
+// export default connect( mapStateToProps, mapDispatchProps )(Main)
+
+
+
 const mapStateToProps = (store) => ({
-    currentUser : store.userState.currentUser 
+    currentUser: store.userState.currentUser
 })
+const mapDispatchProps = (dispatch) => bindActionCreators( { fetchUser, fetchUserPosts, fetchUserFollowing, clearData } , dispatch);
 
-//what does it do ?
-const mapDispatchProps = ( dispatch) => bindActionCreators({ fetchUser}, dispatch)
-
-export default connect( mapStateToProps, mapDispatchProps )(Main)
+export default connect( mapStateToProps,  mapDispatchProps )(Main);

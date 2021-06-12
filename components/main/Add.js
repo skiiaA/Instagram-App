@@ -1,58 +1,130 @@
-import React from 'react'
-// rfc
+import React, { useState, useEffect } from 'react';
+import {StyleSheet, Button, Image} from 'react-native'
+import { Text, View, TouchableOpacity } from 'react-native';
+import { Camera } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 
-import {View, Text} from 'react-native' 
+export default function App( {navigation } ) {
 
-export default function Add() {
-    console.log("Rendering Add screen component")
-    return (
-        <View>
-            <Text> Add </Text>
-        </View>
-    )
+const [hasGalleryPermission, setHasGalleryPermission] = useState(null);
+const [hasCameraPermission, setHasCameraPermission] = useState(null);
+const [camera, setCamera] = useState(null);
+const [image, setImage] = useState(null);
+const [type, setType] = useState(Camera.Constants.Type.back);
+
+useEffect(() => {
+    (async () => {
+    const cameraStatus = await Camera.requestPermissionsAsync();
+    setHasCameraPermission(cameraStatus.status === 'granted');
+
+    const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    setHasGalleryPermission(galleryStatus.status === 'granted');
+
+    })();
+}, []);
+
+const takePicture = async () => {
+    if(camera){
+        const data = await camera.takePictureAsync(null)
+        // console.log(data.uri)     
+        setImage(data.uri)
+    }
 }
 
+const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+    });
 
-// import React, { useState, useEffect } from 'react';
-// import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-// import { Camera } from 'expo-camera';
+    console.log(result);
 
-// export default function App() {
-// const [hasPermission, setHasPermission] = useState(null);
-// const [type, setType] = useState(Camera.Constants.Type.back);
+    if (!result.cancelled) {
+        setImage(result.uri);
+    }
+};
 
-// useEffect(() => {
-//     (async () => {
-// const { status } = await Camera.requestPermissionsAsync();
-// setHasPermission(status === 'granted');
-//     })();
-// }, []);
+if (hasCameraPermission === null || hasGalleryPermission ===null) {
+    return <View />;
+}
+if (hasCameraPermission === false || hasGalleryPermission === false) {
+    return <Text>No access to camera</Text>;
+}
+return (
+    <View style={styles.container}>
+        <View style={styles.cameraContainer}>
+            
+            <Camera 
+            ref = {ref => setCamera(ref)}
+            style={styles.fixedRatio}
+            ratio ={'1:1'} 
+            type={type} />
+        
+        </View>
 
-// if (hasPermission === null) {
-//     return <View />;
-// }
-// if (hasPermission === false) {
-//     return <Text>No access to camera</Text>;
-// }
-// return (
-//     <View style={styles.container}>
-//     <Camera style={styles.camera} type={type}>
-//         <View style={styles.buttonContainer}>
-//         <TouchableOpacity
-//             style={styles.button}
-//             onPress={() => {
-//             setType(
-//                 type === Camera.Constants.Type.back
-//                 ? Camera.Constants.Type.front
-//                 : Camera.Constants.Type.back
-//             );
-//             }}>
-//             <Text style={styles.text}> Flip </Text>
-//         </TouchableOpacity>
-//         </View>
-//     </Camera>
-//     </View>
-// );
-// }
+    
+        <Button
+        title = "Flip Image"
+        onPress={() => {
+        setType(
+            type === Camera.Constants.Type.back
+            ? Camera.Constants.Type.front
+            : Camera.Constants.Type.back
+            );
+        }}>
+            
+        </Button>
 
+        <Button
+        title = "Take Picture"
+        onPress={() => takePicture() }>
+        </Button>
+
+        <Button
+        title = "Pick Image from Gallery"
+        onPress={() => pickImage() }>   
+        </Button>
+
+        <Button 
+        title="Save" 
+        onPress={() => navigation.navigate('Save', { image })} />
+
+        {image && <Image source={{uri : image}}  style={{flex : 1}} />}
+            
+    </View>    
+);
+}
 // const styles = StyleSheet.create({ ... });
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    camera: {
+        flex: 1,
+    },
+    buttonContainer: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        flexDirection: 'row',
+        margin: 20,
+    },
+    button: {
+        flex: 0.1,
+        alignSelf: 'flex-end',
+        alignItems: 'center',
+    },
+    text: {
+        fontSize: 18,
+        color: 'white',
+    },
+    cameraContainer : {
+        flex : 1,
+        flexDirection : 'row'
+    },
+    fixedRatio : {
+        flex : 1,
+        aspectRatio : 1,
+    }
+});
